@@ -17,6 +17,7 @@ except:
   have_pyhidapi = False
   try:
     import usb.core
+    import usb.util
   except:
     print("ERROR: Need the pyhidapi or usb.core module.")
     if sys.platform == "darwin":
@@ -385,6 +386,7 @@ else:
     print("No led tag with vendorID 0x0416 and productID 0x5020 found.")
     print("Connect the led tag and run this tool as root.")
     sys.exit(1)
+  dev.reset()
   try:
     # win32: NotImplementedError: is_kernel_driver_active
     if dev.is_kernel_driver_active(0):
@@ -432,12 +434,33 @@ if len(buf) > 8192:
   print ("Writing more than 8192 bytes damages the display!")
   sys.exit(1)
 
+cfg = dev.get_active_configuration()
+intf = cfg[(0,0)]
+
+ep_out = usb.util.find_descriptor(
+     intf,
+     # match the first OUT endpoint
+     custom_match = \
+       lambda e:
+           usb.util.endpoint_direction(e.bEndpointAddress) == \
+           usb.util.ENDPOINT_OUT)
+
+ep_in = usb.util.find_descriptor(
+     intf,
+     # match the first IN endpoint
+     custom_match = \
+       lambda e:
+           usb.util.endpoint_direction(e.bEndpointAddress) == \
+           usb.util.ENDPOINT_IN)
+
 if have_pyhidapi:
   pyhidapi.hid_write(dev, buf)
 else:
   for i in range(int(len(buf)/64)):
-    time.sleep(0.1)
-    dev.write(1, buf[i*64:i*64+64])
+    ep_out.write(buf[i*64:i*64+64])
+    ep_in.read(64)
 
 if have_pyhidapi:
   pyhidapi.hid_close(dev)
+else:
+  usb.util.dispose_resources(dev)
