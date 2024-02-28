@@ -3,9 +3,9 @@ from PIL import Image, ImageDraw
 import random
 import math
 
-speed = 2
+speed = 3
 fps = 15
-length = 3
+length = 5
 frame_img_width = 48
 frame_width = 44
 width = math.ceil(speed * length * fps)
@@ -15,7 +15,7 @@ im = Image.new("1", (width, height), "black")
 frames = []
 
 random.seed(15)
-for i in range(50):
+for i in range(100):
     dr = ImageDraw.Draw(im)
     x = random.randrange(width)
     y = random.randrange(height)
